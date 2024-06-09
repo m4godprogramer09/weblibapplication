@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Library Management System</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        table, th, td {
+            border: 1px solid black;
+        }
+        th, td {
+            padding: 15px;
+            text-align: left;
+        }
+        form {
+            margin-bottom: 20px;
+        }
+        input[type="text"], input[type="number"] {
+            width: 200px;
+            padding: 5px;
+        }
+        button {
+            padding: 5px 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Library Management System</h1>
+
+    <!-- Book Management -->
+    <h2>Books</h2>
+    <form id="addBookForm">
+        <input type="text" id="bookTitle" placeholder="Title" required>
+        <input type="text" id="bookAuthor" placeholder="Author" required>
+        <input type="text" id="bookISBN" placeholder="ISBN">
+        <input type="text" id="bookPublisher" placeholder="Publisher">
+        <input type="number" id="bookStock" placeholder="Stock" required>
+        <button type="submit">Add Book</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Title</th>
+                <th>Author</th>
+                <th>ISBN</th>
+                <th>Publisher</th>
+                <th>Stock</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="booksTable">
+        </tbody>
+    </table>
+
+    <!-- Member Management -->
+    <h2>Members</h2>
+    <form id="addMemberForm">
+        <input type="text" id="memberName" placeholder="Name" required>
+        <input type="number" id="memberDebt" placeholder="Debt" required>
+        <button type="submit">Add Member</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Debt</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="membersTable">
+        </tbody>
+    </table>
+
+    <!-- Transactions -->
+    <h2>Issue Book</h2>
+    <form id="issueBookForm">
+        <input type="text" id="issueBookTitle" placeholder="Book Title" required>
+        <input type="number" id="issueMemberId" placeholder="Member ID" required>
+        <button type="submit">Issue Book</button>
+    </form>
+
+    <h2>Return Book</h2>
+    <form id="returnBookForm">
+        <input type="text" id="returnBookTitle" placeholder="Book Title" required>
+        <input type="number" id="returnMemberId" placeholder="Member ID" required>
+        <input type="number" id="rentFee" placeholder="Rent Fee" required>
+        <button type="submit">Return Book</button>
+    </form>
+
+    <!-- Data Import -->
+    <h2>Import Books</h2>
+    <form id="importBooksForm">
+        <input type="number" id="numBooks" placeholder="Number of Books" required>
+        <input type="text" id="importTitle" placeholder="Title">
+        <input type="text" id="importAuthors" placeholder="Authors">
+        <input type="text" id="importPublisher" placeholder="Publisher">
+        <input type="number" id="importPage" placeholder="Page">
+        <button type="submit">Import Books</button>
+    </form>
+
+    <script>
+        document.getElementById('addBookForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const title = document.getElementById('bookTitle').value;
+            const author = document.getElementById('bookAuthor').value;
+            const isbn = document.getElementById('bookISBN').value;
+            const publisher = document.getElementById('bookPublisher').value;
+            const stock = parseInt(document.getElementById('bookStock').value);
+
+            fetch('/books', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ title, author, isbn, publisher, stock })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Book added!');
+                loadBooks();
+            });
+        });
+
+        document.getElementById('addMemberForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const name = document.getElementById('memberName').value;
+            const debt = parseFloat(document.getElementById('memberDebt').value);
+
+            fetch('/members', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ name, debt })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Member added!');
+                loadMembers();
+            });
+        });
+
+        document.getElementById('issueBookForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const bookTitle = document.getElementById('issueBookTitle').value;
+            const memberId = parseInt(document.getElementById('issueMemberId').value);
+
+            fetch('/issue', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ book_title: bookTitle, member_id: memberId })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    alert('Book issued!');
+                }
+                loadBooks();
+            });
+        });
+
+        document.getElementById('returnBookForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const bookTitle = document.getElementById('returnBookTitle').value;
+            const memberId = parseInt(document.getElementById('returnMemberId').value);
+            const rentFee = parseFloat(document.getElementById('rentFee').value);
+
+            fetch('/return', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ book_title: bookTitle, member_id: memberId, rent_fee: rentFee })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    alert(data.error);
+                } else {
+                    alert('Book returned!');
+                }
+                loadBooks();
+            });
+        });
+
+        document.getElementById('importBooksForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const numBooks = parseInt(document.getElementById('numBooks').value);
+            const title = document.getElementById('importTitle').value;
+            const authors = document.getElementById('importAuthors').value;
+            const publisher = document.getElementById('importPublisher').value;
+            const page = parseInt(document.getElementById('importPage').value);
+
+            fetch('/import', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ num_books: numBooks, title, authors, publisher, page })
+            })
+            .then(response => response.json())
+            .then(data => {
+                alert('Books imported!');
+                loadBooks();
+            });
+        });
+
+        function loadBooks() {
+            fetch('/books')
+            .then(response => response.json())
+            .then(data => {
+                const booksTable = document.getElementById('booksTable');
+                booksTable.innerHTML = '';
+                data.forEach(book => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${book.title}</td><td>${book.author}</td><td>${book.isbn}</td><td>${book.publisher}</td><td>${book.stock}</td>`;
+                    booksTable.appendChild(row);
+                });
+            });
+        }
+
+        function loadMembers() {
+            fetch('/members')
+            .then(response => response.json())
+            .then(data => {
+                const membersTable = document.getElementById('membersTable');
+                membersTable.innerHTML = '';
+                data.forEach(member => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `<td>${member.name}</td><td>${member.debt}</td>`;
+                    membersTable.appendChild(row);
+                });
+            });
+        }
+
+        // Initial load
+        loadBooks();
+        loadMembers();
+    </script>
+</body>
+</html>
